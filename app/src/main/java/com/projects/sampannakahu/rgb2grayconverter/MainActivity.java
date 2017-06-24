@@ -1,7 +1,6 @@
 package com.projects.sampannakahu.rgb2grayconverter;
 
 import android.app.AlertDialog;
-import android.app.Application;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -9,17 +8,21 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
-import android.hardware.Camera;
-import android.support.v7.app.AppCompatActivity;
+import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.Vibrator;
+import android.support.v7.app.AppCompatActivity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
     private static int randomActivityCode = 0;
+    private SensorManager mSensorManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
 
                 if (!getApplicationContext().getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
                     Context context = getApplicationContext();
-                    AlertDialog alertDialog = new AlertDialog.Builder(context,AlertDialog.THEME_DEVICE_DEFAULT_DARK)
+                    AlertDialog alertDialog = new AlertDialog.Builder(context, AlertDialog.THEME_DEVICE_DEFAULT_DARK)
                             .setMessage("No camera found in this device!")
                             .setCancelable(true)
                             .setTitle("No camera!")
@@ -61,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
                 ImageView imageView = (ImageView) findViewById(R.id.imageView);
                 if (imageView.getDrawable().equals(R.mipmap.default_camera_image_2)) {
                     Context context = getApplicationContext();
-                    AlertDialog alertDialog = new AlertDialog.Builder(context,AlertDialog.THEME_DEVICE_DEFAULT_DARK)
+                    AlertDialog alertDialog = new AlertDialog.Builder(context, AlertDialog.THEME_DEVICE_DEFAULT_DARK)
                             .setMessage("No image selected for conversion!")
                             .setCancelable(true)
                             .setTitle("No image!")
@@ -88,14 +91,34 @@ public class MainActivity extends AppCompatActivity {
                 imageView.setImageResource(R.mipmap.default_camera_image_2);
             }
         });
+
+        final TextView coordinatesTextView = (TextView) findViewById(R.id.coordinates_text_view);
+        final Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+
+        final ImageView imageView = (ImageView) findViewById(R.id.imageView);
+        if (vibrator.hasVibrator()) {
+            imageView.setBackgroundColor(0x00FF00);
+        }
+        imageView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                String displayString = "X:" + String.valueOf(event.getX()) + " Y:" + String.valueOf(event.getY());
+                coordinatesTextView.setText(displayString);
+                if (vibrator.hasVibrator()) {
+
+                    vibrator.vibrate(5);
+                }
+                return true;
+            }
+        });
     }
 
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode==randomActivityCode && resultCode == RESULT_OK) {
+        if (requestCode == randomActivityCode && resultCode == RESULT_OK) {
             super.onActivityResult(requestCode, resultCode, data);
             Bitmap bp = (Bitmap) data.getExtras().get("data");
-            ImageView imageView = (ImageView)findViewById(R.id.imageView);
+            ImageView imageView = (ImageView) findViewById(R.id.imageView);
             imageView.setImageBitmap(bp);
         }
 
@@ -104,15 +127,15 @@ public class MainActivity extends AppCompatActivity {
     private Bitmap convertToGrayscale(Bitmap inputBitmap) {
         Bitmap outputBitmap = inputBitmap.copy(inputBitmap.getConfig(), true);
         int width = inputBitmap.getWidth();
-        int height  = inputBitmap.getHeight();
-        for (int x=0; x<width; x++) {
-            for (int y=0; y<height; y++) {
+        int height = inputBitmap.getHeight();
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
                 int color = inputBitmap.getPixel(x, y);
                 int red = Color.red(color);
                 int green = Color.green(color);
                 int blue = Color.blue(color);
-                double weightedAvg = red*0.299 + green*0.587 + blue*0.114;
-                outputBitmap.setPixel(x, y, Color.rgb((int)weightedAvg,(int)weightedAvg,(int)weightedAvg));
+                double weightedAvg = red * 0.299 + green * 0.587 + blue * 0.114;
+                outputBitmap.setPixel(x, y, Color.rgb((int) weightedAvg, (int) weightedAvg, (int) weightedAvg));
             }
         }
         return outputBitmap;
